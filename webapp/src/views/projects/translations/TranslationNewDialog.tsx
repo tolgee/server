@@ -1,34 +1,32 @@
-import { useContext } from 'react';
 import Dialog from '@material-ui/core/Dialog';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import { useTranslate } from '@tolgee/react';
 import { container } from 'tsyringe';
+import { useContextSelector } from 'use-context-selector';
 
-import { LanguagesMenu } from 'tg.component/common/form/LanguagesMenu';
 import { ResourceErrorComponent } from 'tg.component/common/form/ResourceErrorComponent';
 import { StandardForm } from 'tg.component/common/form/StandardForm';
 import { TextField } from 'tg.component/common/form/fields/TextField';
 import { Validation } from 'tg.constants/GlobalValidationSchema';
-import { LINKS, PARAMS } from 'tg.constants/links';
 import { useProject } from 'tg.hooks/useProject';
 import { MessageService } from 'tg.service/MessageService';
 import { useApiMutation } from 'tg.service/http/useQueryApi';
-import { RedirectionActions } from 'tg.store/global/RedirectionActions';
-import { TranslationActions } from 'tg.store/project/TranslationActions';
-
-import { TranslationListContext } from './TtranslationsGridContextProvider';
+import { TranslationsContext } from './TranslationsContext';
 
 export type TranslationCreationValue = {
   key: string;
   translations: { [abbreviation: string]: string };
 };
 
-const redirectionActions = container.resolve(RedirectionActions);
-const translationActions = container.resolve(TranslationActions);
 const messaging = container.resolve(MessageService);
 
-export function TranslationCreationDialog() {
+type Props = {
+  onClose: () => void;
+  onAdd: () => void;
+};
+
+export const TranslationNewDialog: React.FC<Props> = ({ onClose, onAdd }) => {
   const projectDTO = useProject();
 
   const t = useTranslate();
@@ -49,29 +47,25 @@ export function TranslationCreationDialog() {
       {
         onSuccess: () => {
           messaging.success(t('translation_grid_translation_created'));
-          listContext.loadData();
+          onAdd();
           onClose();
         },
       }
     );
   }
 
-  const selectedLanguages = translationActions.useSelector(
-    (s) => s.selectedLanguages
+  const languages = useContextSelector(TranslationsContext, (v) => v.languages);
+  const selectedLanguages = useContextSelector(
+    TranslationsContext,
+    (v) => v.selectedLanguages
   );
 
-  const listContext = useContext(TranslationListContext);
-
-  function onClose() {
-    redirectionActions.redirect.dispatch(
-      LINKS.PROJECT_TRANSLATIONS.build({
-        [PARAMS.PROJECT_ID]: projectDTO.id,
-      })
-    );
+  if (!selectedLanguages) {
+    return null;
   }
 
   const initialTranslations =
-    selectedLanguages!.reduce((res, l) => ({ ...res, [l]: '' }), {}) || {};
+    selectedLanguages.reduce((res, l) => ({ ...res, [l]: '' }), {}) || {};
 
   return (
     <Dialog
@@ -88,7 +82,7 @@ export function TranslationCreationDialog() {
       <DialogContent>
         {createKey.error && <ResourceErrorComponent error={createKey.error} />}
 
-        <LanguagesMenu context="creation-dialog" />
+        {/* <LanguagesMenu context="creation-dialog" /> */}
         <StandardForm
           onSubmit={onSubmit}
           initialValues={{ key: '', translations: initialTranslations }}
@@ -105,17 +99,17 @@ export function TranslationCreationDialog() {
             fullWidth
           />
 
-          {listContext.listLanguages.map((s) => (
+          {languages?.map((s) => (
             <TextField
               multiline
-              lang={s}
-              key={s}
-              name={'translations.' + s}
-              label={s}
+              lang={s.tag}
+              key={s.tag}
+              name={'translations.' + s.tag}
+              label={s.name}
             />
           ))}
         </StandardForm>
       </DialogContent>
     </Dialog>
   );
-}
+};

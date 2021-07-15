@@ -11,8 +11,8 @@ import { ProjectInviteView } from './invitations/ProjectInviteView';
 import { LanguageEditView } from './languages/LanguageEditView';
 import { ProjectPermissionsView } from './permissions/ProjectPermissionsVIew';
 import { ProjectSettingsView } from './project/ProjectSettingsView';
-import { TranslationView } from './translations/TranslationView';
 import { SocketIoPreview } from 'tg.views/projects/SocketIoPreview';
+import { TranslationsView } from './translations/TranslationsView';
 
 export const ProjectRouter = () => {
   const match = useRouteMatch();
@@ -24,7 +24,7 @@ export const ProjectRouter = () => {
       <ProjectProvider id={Number(projectId)}>
         <ProjectPage fullWidth={true}>
           <Route path={LINKS.PROJECT_TRANSLATIONS.template}>
-            <TranslationView />
+            <TranslationsView />
           </Route>
 
           <Route exact path={LINKS.PROJECT_EDIT.template}>
